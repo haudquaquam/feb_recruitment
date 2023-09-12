@@ -1,19 +1,24 @@
 from flask import Flask, render_template
-import pandas as pd
 
 app = Flask(__name__)
 
-# Import necessary libraries and functions
+@app.route("/")
+def home():
+    data = [
+        (0, "BMS", "BMS_TEMPERATURE", 600),
+        (0.01, "BMS", "BMS_TEMPERATURE", 599.98),
+        (0.02, "BMS", "BMS_TEMPERATURE", 599.96),
+        (0.03, "BMS", "BMS_TEMPERATURE", 599.93),
+        (0.04, "BMS", "BMS_TEMPERATURE", 599.98),
+        (0.05, "BMS", "BMS_TEMPERATURE", 599.87),
+        (0.06, "BMS", "BMS_TEMPERATURE", 599.85),
+        (0.07, "BMS", "BMS_TEMPERATURE", 599.83),
+        (0.08, "BMS", "BMS_TEMPERATURE", 599.82),
+        (0.09, "BMS", "BMS_TEMPERATURE", 599.8),
+        (0.10, "BMS", "BMS_TEMPERATURE", 599.78),
+    ]
 
-def process_csv():
-    df = pd.read_csv('data/dataset.csv')
-    # Add data processing logic here as needed
-    return df
-
-@app.route('/')
-def index():
-    df = process_csv()
-    return render_template('index.html', data=df.to_html(classes='table table-striped'))
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    labels = [row[0] for row in data]
+    values = [row[3] for row in data]
+    
+    return render_template("graph.html", labels=labels, values=values)
