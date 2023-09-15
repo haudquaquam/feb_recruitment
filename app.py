@@ -1,24 +1,43 @@
 from flask import Flask, render_template
+import pandas as pd
+import json
+import plotly
+import plotly.express as px
 
 app = Flask(__name__)
 
-@app.route("/")
-def home():
-    data = [
-        (0, "BMS", "BMS_TEMPERATURE", 600),
-        (0.01, "BMS", "BMS_TEMPERATURE", 599.98),
-        (0.02, "BMS", "BMS_TEMPERATURE", 599.96),
-        (0.03, "BMS", "BMS_TEMPERATURE", 599.93),
-        (0.04, "BMS", "BMS_TEMPERATURE", 599.98),
-        (0.05, "BMS", "BMS_TEMPERATURE", 599.87),
-        (0.06, "BMS", "BMS_TEMPERATURE", 599.85),
-        (0.07, "BMS", "BMS_TEMPERATURE", 599.83),
-        (0.08, "BMS", "BMS_TEMPERATURE", 599.82),
-        (0.09, "BMS", "BMS_TEMPERATURE", 599.8),
-        (0.10, "BMS", "BMS_TEMPERATURE", 599.78),
-    ]
+# Process CSV into multiple CSVs based on Message. https://stackoverflow.com/questions/46847803/splitting-csv-file-based-on-a-particular-column-using-python
+# Creates new CSV files, returns the list of new file names.
+def process_csv(): 
+    data = pd.read_csv("templates/dataset.csv")
 
-    labels = [row[0] for row in data]
-    values = [row[3] for row in data]
-    
-    return render_template("graph.html", labels=labels, values=values)
+    data_category_range = data['Message'].unique()
+    data_category_range = data_category_range.tolist()
+
+    for i,value in enumerate(data_category_range):
+        data[data['Message'] == value].to_csv(r'templates/Message_'+str(value)+r'.csv',index = False, na_rep = 'N/A')
+    return data_category_range
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/chart1')
+def chart1():
+    data_list = process_csv()
+    df = pd.DataFrame({
+        "Fruit": ["Apples", "Oranges", "Bananas", "Apples", "Oranges", "Bananas"],
+        "Amount": [4, 1, 2, 2, 4, 5],
+        "City": ["SF", "SF", "SF", "Montreal", "Montreal", "Montreal"]
+    })
+
+    fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
+
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    header="Fruit in North America"
+    description = """
+    A academic study of the number of apples, oranges and bananas in the cities of
+    San Francisco and Montreal would probably not come up with this chart.
+    """
+    return render_template('notdash2.html', graphJSON=graphJSON, header=header,description=description)
+
