@@ -1,24 +1,51 @@
 from flask import Flask, render_template
+import pandas as pd
+import json
+import plotly
+import plotly.express as px
+import plotly.graph_objs as go
+
 
 app = Flask(__name__)
 
-@app.route("/")
-def home():
-    data = [
-        (0, "BMS", "BMS_TEMPERATURE", 600),
-        (0.01, "BMS", "BMS_TEMPERATURE", 599.98),
-        (0.02, "BMS", "BMS_TEMPERATURE", 599.96),
-        (0.03, "BMS", "BMS_TEMPERATURE", 599.93),
-        (0.04, "BMS", "BMS_TEMPERATURE", 599.98),
-        (0.05, "BMS", "BMS_TEMPERATURE", 599.87),
-        (0.06, "BMS", "BMS_TEMPERATURE", 599.85),
-        (0.07, "BMS", "BMS_TEMPERATURE", 599.83),
-        (0.08, "BMS", "BMS_TEMPERATURE", 599.82),
-        (0.09, "BMS", "BMS_TEMPERATURE", 599.8),
-        (0.10, "BMS", "BMS_TEMPERATURE", 599.78),
-    ]
+# Process CSV into multiple CSVs based on Message. https://stackoverflow.com/questions/46847803/splitting-csv-file-based-on-a-particular-column-using-python
+# Creates new CSV files, returns the list of new file names.
+def process_csv(): 
+    data = pd.read_csv("data/dataset.csv")
 
-    labels = [row[0] for row in data]
-    values = [row[3] for row in data]
-    
-    return render_template("graph.html", labels=labels, values=values)
+    data_category_range = data['Message'].unique()
+    data_category_range = data_category_range.tolist()
+
+    for i,value in enumerate(data_category_range):
+        data[data['Message'] == value].to_csv(r'data/Message_'+str(value)+r'.csv',index = False, na_rep = 'N/A')
+
+@app.route('/')
+def index():
+    df = pd.read_csv('data/dataset.csv')
+    return render_template('index.html', data=df)
+
+@app.route('/chart')
+def chart1():
+    process_csv()
+    df = pd.read_csv('data/Message_BMS_Temperature.csv')
+    df2 = pd.read_csv('data/Message_BMS_Voltage.csv')
+
+    fig = px.line(df, x="Timestamps", y="Data", color="Message")
+    fig.update_traces(line_color='green')
+    fig.add_trace(px.line(df2, x="Timestamps", y="Data", color="Message").data[0])
+
+
+    #fig.add_scattergl(x="Timestamps", y="Data", line={'color': 'black'})
+
+    # fig = go.Figure()
+    # fig.add_
+    #fig.update_
+
+
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    header="BMS Voltage vs. Temperature Over Time"
+    description = """
+    Using sample data from 8-21-22, this graph displays BMS voltage and temperature data over time.
+    """
+    return render_template('chart.html', graphJSON=graphJSON, header=header,description=description)
+
