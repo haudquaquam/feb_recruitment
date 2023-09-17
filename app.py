@@ -34,14 +34,6 @@ def chart1():
     fig.update_traces(line_color='green')
     fig.add_trace(px.line(df2, x="Timestamps", y="Data", color="Message").data[0])
 
-
-    #fig.add_scattergl(x="Timestamps", y="Data", line={'color': 'black'})
-
-    # fig = go.Figure()
-    # fig.add_
-    #fig.update_
-
-
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
     header="BMS Voltage vs. Temperature Over Time"
     description = """
